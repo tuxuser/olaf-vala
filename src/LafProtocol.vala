@@ -30,7 +30,9 @@ namespace Olaf
             }
             else if (tmp.Header.CmdName == LAFCommand.RESPONSE_FAIL.to_uint())
             {
-                stderr.printf("Command FAILED! ErrorCode: 0x%04x\n", tmp.Header.Arg1);
+                LAFError error = (LAFError)tmp.Header.Arg1;
+                stderr.printf("Command FAILED! ErrorCode: 0x%04x (%s)\n",
+                                                    error, error.to_string());
                 return -2;
             }
             else if (tmp.Header.CmdName != ~tmp.Header.CmdInvert)
