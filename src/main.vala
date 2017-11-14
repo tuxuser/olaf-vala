@@ -98,8 +98,10 @@ namespace Olaf
 			stdout.printf(props.to_string());
 			*/
 
+			protocol.SendUnlock();
+
 			Structure.PhoneInfo phoneInfo;
-			protocol.SendPhoneInfo(out phoneInfo);
+			protocol.GetPhoneInfo(out phoneInfo);
 			stdout.printf(phoneInfo.to_string());
 
 			Structure.GPTPartitionTable partTable;

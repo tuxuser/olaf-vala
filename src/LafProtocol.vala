@@ -243,6 +243,23 @@ namespace Olaf
             return 0;
         }
 
+        public int SendUnlock()
+        {
+            int ret = 0;
+            stdout.printf("Sending USB interface ?unlock?\n");
+            uint8[] req = {0xEF, 0x00, 0x16, 0x65, 0x7E};
+            uint8[] res = new uint8[7];
+
+            ret = this.Device.Write(req);
+            assert(ret == 0);
+            ret = this.Device.Read(res);
+            assert(ret == 0);
+            stdout.printf("?Unlock? response:\n");
+            Util.hexdump(res);
+
+            return 0;
+        }
+
         public int GetPartitionTable(out GPTPartitionTable partitionTable)
         {
             int ret = 0;
@@ -259,9 +276,8 @@ namespace Olaf
 
         public int GetPhoneInfo(out PhoneInfo phoneInfo)
         {
-            uint8[] response = new uint8[PhoneInfo.PHONEINFO_RESPONSE_LEN];
-
             int ret = 0;
+            uint8[] response = new uint8[PhoneInfo.PHONEINFO_RESPONSE_LEN];
             ret = this.Device.Write(PhoneInfo.PHONEINFO_CMD);
             assert(ret == 0);
             ret = this.Device.Read(response);
