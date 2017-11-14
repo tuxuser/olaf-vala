@@ -1,6 +1,6 @@
 using Gee;
 
-namespace Olaf.Packet
+namespace Olaf.Structure
 {
 	[SimpleType]
     public enum DeviceProperty

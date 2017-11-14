@@ -89,7 +89,7 @@ namespace Olaf
 			protocol.SendClose(fileHandle);
 			*/
 			/* 
-			DeviceProperties props;
+			Structure.DeviceProperties props;
 			if (protocol.SendGetInfo(out props) != 0)
 			{
 				stderr.printf("Failed to get device properties\n");
@@ -97,13 +97,15 @@ namespace Olaf
 			}
 			stdout.printf(props.to_string());
 			*/
-			uint8[] partTable;
+			Structure.GPTPartitionTable partTable;
 			if (protocol.GetPartitionTable(out partTable) != 0)
 			{
 				stderr.printf("Failed to get partition table\n");
 				return 3;
 			}
-			Util.hexdump(partTable);
+
+			for (uint i = 0; i < partTable.GetPartitionCount(); i++)
+				partTable.PrintPartition(i);
 			
 			return 0;
 		}

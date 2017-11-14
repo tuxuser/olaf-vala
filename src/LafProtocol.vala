@@ -1,5 +1,6 @@
 using Olaf.Communication;
 using Olaf.Packet;
+using Olaf.Structure;
 
 namespace Olaf
 {
@@ -243,16 +244,17 @@ namespace Olaf
             return 0;
         }
 
-        public int GetPartitionTable(out uint8[] partitionTable)
+        public int GetPartitionTable(out GPTPartitionTable partitionTable)
         {
             int ret = 0;
             int fileHandle;
-            uint8[] table;
             // "" fallsback to "/dev/block/mmcblk0"
             ret = SendOpen("", out fileHandle);
             assert(ret == 0);
-            SendRead(fileHandle, 0, GPT_TABLE_LENGTH, out partitionTable);
+            uint8[] data = new uint8[GPT_TABLE_LENGTH];
+            SendRead(fileHandle, 0, data.length, out data);
             assert(ret == 0);
+            partitionTable = new GPTPartitionTable(data);
             return 0;
         }
     }
