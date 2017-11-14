@@ -224,22 +224,22 @@ namespace Olaf
             return 0;
         }
 
-        public int SendGetInfo(out DeviceProperties properties)
+        public int GetLafProperties(out LAFProperties properties)
         {
             LAFPacket response = new LAFPacket.Empty();
             LAFPacket request = new LAFPacket.WithEnum(LAFCommand.INFO,
                                                        LAFSubCommand.INFO_GET_PROPS);
             // Request needs body of fixed size
-            uint8[] emptyBody = new uint8[BodySize.INFO_PROPERTIES];
+            uint8[] emptyBody = new uint8[LAFProperties.LAF_PROPERTIES_LENGTH];
             // + that fixed size as uint16 at the beginning of body
-            *(ushort*)emptyBody = (ushort)BodySize.INFO_PROPERTIES;
+            *(ushort*)emptyBody = (ushort)LAFProperties.LAF_PROPERTIES_LENGTH;
             request.SetBody(emptyBody);
 
             if(SendAndReceive(request, out response, "INFO GPRO") != 0)
             {
                 return -1;
             }
-            properties = new DeviceProperties(response.Body);
+            properties = new LAFProperties(response.Body);
             return 0;
         }
 

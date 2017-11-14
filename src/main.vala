@@ -88,17 +88,18 @@ namespace Olaf
 			stdout.printf("Closing FileHandle\n");
 			protocol.SendClose(fileHandle);
 			*/
-			/* 
-			Structure.DeviceProperties props;
-			if (protocol.SendGetInfo(out props) != 0)
+			
+
+		
+			protocol.SendUnlock();
+
+			Structure.LAFProperties props;
+			if (protocol.GetLafProperties(out props) != 0)
 			{
 				stderr.printf("Failed to get device properties\n");
 				return 2;
 			}
 			stdout.printf(props.to_string());
-			*/
-
-			protocol.SendUnlock();
 
 			Structure.PhoneInfo phoneInfo;
 			protocol.GetPhoneInfo(out phoneInfo);

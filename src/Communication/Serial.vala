@@ -112,7 +112,6 @@ namespace Olaf.Communication
             {	
                 unowned string name = ports[i].name();
                 unowned string description = ports[i].get_description();
-                stdout.printf(name);
                 if (description.contains(SerialEnumerator.LAFString))
                     outDevices.append(new SerialDevice(ProtocolType.LAF, name, description));
                 else if (description.contains(SerialEnumerator.ModemString))
