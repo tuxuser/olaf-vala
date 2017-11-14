@@ -104,7 +104,7 @@ link_directories(
 
 add_executable(olaf ${VALA_C})
 
-#include_directories(native/headers)
+include_directories(native/headers)
 #include_directories(native/libmfile)
 
 set(olaf_libs
