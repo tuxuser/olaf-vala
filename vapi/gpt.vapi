@@ -33,7 +33,7 @@ namespace Vapi.Gpt
         uint64 StartLBA;            // 32
         uint64 EndLBA;              // 40
         uint64 Attributes;          // 48
-        uint8 PartitionName[72];    // 56
+        uint16 PartitionName[36];    // 56
     } // size 128
 
     [CCode(cname = "MBR_PARTITION")]

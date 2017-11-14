@@ -20,6 +20,19 @@ namespace Olaf
             return (uint)(cmd[0] | cmd[1] << 8 | cmd[2] << 16 | cmd[3] << 24);
         }
 
+        public static string UInt16ToString(uint16[] array)
+        {
+            unichar c;
+            StringBuilder builder = new StringBuilder();
+            for (int i = 0; i < array.length; i++) {
+                c = ((string)array).get_char(i);
+                if(c.iscntrl())
+                    continue;
+                builder.append_unichar(c);
+            }
+            return builder.str;
+        }
+
         // Source: https://github.com/Lekensteyn/lglaf/blob/master/lglaf.py#L127
         public static ushort Crc16Lsb(uint8[] data)
         {

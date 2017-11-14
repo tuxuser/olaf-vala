@@ -30,7 +30,7 @@ typedef struct _GPT_PARTITION
     uint64_t StartLBA;            // 32
     uint64_t EndLBA;              // 40
     uint64_t Attributes;          // 48
-    uint8_t PartitionName[72];    // 56
+    uint16_t PartitionName[36];    // 56
 } GPT_PARTITION;                // size 128
 
 typedef struct _MBR_PARTITION

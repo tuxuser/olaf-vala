@@ -103,7 +103,7 @@ namespace Olaf
 				stderr.printf("Failed to get partition table\n");
 				return 3;
 			}
-
+			partTable.PrintHeader();
 			for (uint i = 0; i < partTable.GetPartitionCount(); i++)
 				partTable.PrintPartition(i);
 			
