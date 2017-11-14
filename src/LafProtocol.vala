@@ -132,7 +132,7 @@ namespace Olaf
         {
             if (SendCentMeter(2) != 0)
             {
-                stderr.printf("SendCmdExec failed CENT METER challenge!\n");
+                stderr.printf("SendCmdExec: Failed CENT METER challenge!\n");
                 return -1;
             }
 
@@ -152,7 +152,7 @@ namespace Olaf
         {
             if (SendCentMeter(2) != 0)
             {
-                stderr.printf("SendCmdExec failed CENT METER challenge!\n");
+                stderr.printf("SendOpen: Failed CENT METER challenge!\n");
                 return -1;
             }
 

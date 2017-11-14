@@ -75,7 +75,6 @@ namespace Olaf
 				return 1;
 			}
 			
-			string filePath = "";
 			LAFProtocol protocol = new LAFProtocol(selectedDevice);
 			//protocol.SendHello();
 			/*
@@ -88,7 +87,8 @@ namespace Olaf
 
 			stdout.printf("Closing FileHandle\n");
 			protocol.SendClose(fileHandle);
-				*/
+			*/
+			/* 
 			DeviceProperties props;
 			if (protocol.SendGetInfo(out props) != 0)
 			{
@@ -96,13 +96,14 @@ namespace Olaf
 				return 2;
 			}
 			stdout.printf(props.to_string());
-
+			*/
 			uint8[] partTable;
 			if (protocol.GetPartitionTable(out partTable) != 0)
 			{
 				stderr.printf("Failed to get partition table\n");
 				return 3;
 			}
+			Util.hexdump(partTable);
 			
 			return 0;
 		}

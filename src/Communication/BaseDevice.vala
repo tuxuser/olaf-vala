@@ -73,7 +73,7 @@ namespace Olaf.Communication
             return Write(data);
         }
 
-        public int ReceivePacket(out LAFPacket outPacket)
+        public int ReceivePacketSerial(out LAFPacket outPacket)
         {
             uint8[] header = new uint8[sizeof(LAF_PACKET_HDR)];
             int ret = Read(header);
@@ -102,6 +102,41 @@ namespace Olaf.Communication
             }
             stdout.printf("\n");
             return 0;
+        }
+
+        public int ReceivePacketUsb(out LAFPacket outPacket)
+        {
+            // 16 mb buffer OMG!!
+            uint8[] buffer = new uint8[16*1024*1024];
+            int ret = Read(buffer);
+            if (ret != 0)
+            {
+                return ret;
+            }
+            outPacket = new LAFPacket.Empty();
+            outPacket.Deserialize(buffer);
+            stdout.printf(":::Incoming Packet:::\n");
+            stdout.printf(outPacket.to_string());
+            if (outPacket.Header.BodyLength > 0)
+            {
+                uint8[] body = new uint8[outPacket.Header.BodyLength];
+                Memory.copy(body, &buffer[sizeof(LAF_PACKET_HDR)], outPacket.Header.BodyLength);
+                outPacket.SetBody(body);
+                stdout.printf(":::Body:::\n");
+                Util.hexdump(outPacket.Body);
+            }  
+            stdout.printf("\n");
+            return 0;
+        }
+
+        public int ReceivePacket(out LAFPacket outPacket)
+        {
+            if (InterfaceType.USB == this.Interface)
+                return ReceivePacketUsb(out outPacket);
+            else if (InterfaceType.SERIAL == this.Interface)
+                return ReceivePacketSerial(out outPacket);
+            else
+                assert_not_reached();
         }
 
         public virtual string to_string()

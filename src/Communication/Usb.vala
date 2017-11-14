@@ -28,32 +28,27 @@ namespace Olaf.Communication
 
         public override bool Open()
         {
-            int result = 0;
-            this.Device.open(out this.Handle);
-            if (this.Handle == null)
+            LibUSB.Error result = 0;
+            if ((result = (LibUSB.Error)this.Device.open(out this.Handle)) != LibUSB.Error.SUCCESS)
             {
-                stderr.printf("No handle returned from Device.open()\n");
+                stderr.printf("Opening devicehandle failed! Error: %s\n", result.to_string());
                 return false;
             }
-
             stdout.printf("Connected to %s\n", this.to_string());
 
             int currentConfig = -1;            
-            result = this.Handle.get_configuration(out currentConfig);
-            if (result != LibUSB.Error.SUCCESS)
+            if ((result = (LibUSB.Error)this.Handle.get_configuration(out currentConfig)) != LibUSB.Error.SUCCESS)
             {
-                stderr.printf("Getting configuration from device failed!\n");
+                stderr.printf("Getting configuration from device failed! Error: %s\n", result.to_string());
                 return false;
             }
 
             if (currentConfig != this.ConfigurationNum)
             {
-                stdout.printf("Setting configuration: Current: %i -> Target: %i\n",
-                                                        currentConfig, this.ConfigurationNum);
-                result = this.Handle.set_configuration(this.ConfigurationNum);
-                if (result != LibUSB.Error.SUCCESS)
+                stdout.printf("Setting configuration: Current: %i -> Target: %i\n", currentConfig, this.ConfigurationNum);
+                if ((result = (LibUSB.Error)this.Handle.set_configuration(this.ConfigurationNum)) != LibUSB.Error.SUCCESS)
                 {
-                    stderr.printf("Setting configuration failed!\n");
+                    stderr.printf("Setting configuration failed! Error: %s\n", result.to_string());
                     return false;
                 }
             }
@@ -67,16 +62,16 @@ namespace Olaf.Communication
                 if (this.Handle.kernel_driver_active(infNum) > 0)
                 {
                     stdout.printf("Detaching kernel driver for interface: %i\n", infNum);
-                    result = this.Handle.detach_kernel_driver(infNum);
+                    result = (LibUSB.Error)this.Handle.detach_kernel_driver(infNum);
+                    if (result != LibUSB.Error.SUCCESS)
+                        stderr.printf("Detaching kernel driver failed! Error: %s\n", result.to_string());
                 }
-                if (infNum == this.InterfaceNum)
+                if (infNum != this.InterfaceNum)
+                    continue;
+                if ((result = (LibUSB.Error)this.Handle.claim_interface(this.InterfaceNum)) != LibUSB.Error.SUCCESS)
                 {
-                    result = this.Handle.claim_interface(this.InterfaceNum);
-                    if (result != 0)
-                    {
-                        stderr.printf("Failed to claim interface %i\n", this.InterfaceNum);
-                        return false;
-                    }   
+                    stderr.printf("Failed to claim interface %i! Error: %s\n", this.InterfaceNum, result.to_string());
+                    return false;
                 }
             }
 
@@ -90,10 +85,10 @@ namespace Olaf.Communication
         public override int Read(uint8[] outData)
         {
             int transferred;
-            int result = this.Handle.bulk_transfer(this.EpIN, outData, out transferred, TRANSFER_TIMEOUT);
-            if (result != LibUSB.Error.SUCCESS || transferred != outData.length)
+            LibUSB.Error result = (LibUSB.Error)this.Handle.bulk_transfer(this.EpIN, outData, out transferred, TRANSFER_TIMEOUT);
+            if (result != LibUSB.Error.SUCCESS)
             {
-                stderr.printf("Reading failed, Error: %i, transferred: %i\n", result, transferred);
+                stderr.printf("Reading failed, Error: %s, transferred: %i\n", result.to_string(), transferred);
                 return 1;
             }
             return 0;
@@ -102,10 +97,10 @@ namespace Olaf.Communication
         public override int Write(uint8[] inData)
         { 
             int transferred;
-            int result = this.Handle.bulk_transfer(this.EpOUT, inData, out transferred, TRANSFER_TIMEOUT);
+            LibUSB.Error result = (LibUSB.Error)this.Handle.bulk_transfer(this.EpOUT, inData, out transferred, TRANSFER_TIMEOUT);
             if (result != LibUSB.Error.SUCCESS || transferred != inData.length)
             {
-                stderr.printf("Writing failed, Error: %i, transferred: %i\n", result, transferred);
+                stderr.printf("Writing failed, Error: %s, transferred: %i\n", result.to_string(), transferred);
                 return 1;
             }
             return 0;
