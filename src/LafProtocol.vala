@@ -8,7 +8,6 @@ namespace Olaf
     {
         // https://github.com/Lekensteyn/lglaf/blob/master/protocol.md
         public const uint VERSION = 0x01000004;
-        public const uint GPT_TABLE_LENGTH = 0x4400;
 
         private LGDevice Device;
         public LAFProtocol(LGDevice device)
@@ -251,10 +250,24 @@ namespace Olaf
             // "" fallsback to "/dev/block/mmcblk0"
             ret = SendOpen("", out fileHandle);
             assert(ret == 0);
-            uint8[] data = new uint8[GPT_TABLE_LENGTH];
+            uint8[] data = new uint8[GPTPartitionTable.GPT_TABLE_LENGTH];
             SendRead(fileHandle, 0, data.length, out data);
             assert(ret == 0);
             partitionTable = new GPTPartitionTable(data);
+            return 0;
+        }
+
+        public int GetPhoneInfo(out PhoneInfo phoneInfo)
+        {
+            uint8[] response = new uint8[PhoneInfo.PHONEINFO_RESPONSE_LEN];
+
+            int ret = 0;
+            ret = this.Device.Write(PhoneInfo.PHONEINFO_CMD);
+            assert(ret == 0);
+            ret = this.Device.Read(response);
+            assert(ret == 0);
+            phoneInfo = new PhoneInfo(response);
+
             return 0;
         }
     }

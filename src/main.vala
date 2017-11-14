@@ -97,15 +97,18 @@ namespace Olaf
 			}
 			stdout.printf(props.to_string());
 			*/
+
+			Structure.PhoneInfo phoneInfo;
+			protocol.SendPhoneInfo(out phoneInfo);
+			stdout.printf(phoneInfo.to_string());
+
 			Structure.GPTPartitionTable partTable;
 			if (protocol.GetPartitionTable(out partTable) != 0)
 			{
 				stderr.printf("Failed to get partition table\n");
 				return 3;
 			}
-			partTable.PrintHeader();
-			for (uint i = 0; i < partTable.GetPartitionCount(); i++)
-				partTable.PrintPartition(i);
+			stdout.printf(partTable.to_string());
 			
 			return 0;
 		}

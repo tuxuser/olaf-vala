@@ -6,7 +6,7 @@ namespace Vapi.Gpt
      */
 
     [CCode(cname = "GPT_HEADER")]
-    struct GptHeader
+    public struct GptHeader
     {
         uint8 Signature[8];     // 00
         uint32 Version;         // 08
@@ -26,7 +26,7 @@ namespace Vapi.Gpt
     } // size 512
 
     [CCode(cname = "GPT_PARTITION")]
-    struct GptPartition
+    public struct GptPartition
     {
         uint8 PartitionGUID[16];    // 0
         uint8 UniqueGUID[16];       // 16
@@ -37,7 +37,7 @@ namespace Vapi.Gpt
     } // size 128
 
     [CCode(cname = "MBR_PARTITION")]
-    struct MBRPartition
+    public struct MBRPartition
     {
         uint8 Status;       // 0
         uint8 StartChs[3];  // 1
@@ -48,7 +48,7 @@ namespace Vapi.Gpt
     } // size 16
 
     [CCode(cname = "MASTER_BOOT_RECORD")]
-    struct MasterBootRecord
+    public struct MasterBootRecord
     {
         uint8 Bootcode[440];        // 0
         uint32 DiskSignature;       // 440
@@ -58,7 +58,7 @@ namespace Vapi.Gpt
     } // size 512
 
     [CCode(cname = "PARTITION_TABLE")]
-    struct PartitionTable
+    public struct PartitionTable
     {
         MasterBootRecord mbr;       // 0
         GptHeader gptHeader;        // 512

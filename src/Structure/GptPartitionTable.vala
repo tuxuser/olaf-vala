@@ -4,6 +4,8 @@ namespace Olaf.Structure
 {
     public class GPTPartitionTable
     {
+        public static uint GPT_TABLE_LENGTH = 0x4400;
+
         private PartitionTable partitionTable;
         private GptPartition[] Partitions;
 
@@ -44,7 +46,23 @@ namespace Olaf.Structure
             return this.Partitions.length;
         }
 
-        public void PrintHeader()
+        public GptHeader GetHeader()
+        {
+            return this.partitionTable.gptHeader;
+        }
+
+        public GptPartition? GetPartition(uint index)
+        {
+            if (index > GetPartitionCount())
+            {
+                stderr.printf("Requested partition %u out of bounds\n", index);
+                return null;
+            }
+
+            return this.Partitions[index];
+        }
+
+        public string to_string()
         {
             GptHeader header = this.partitionTable.gptHeader;
             StringBuilder builder = new StringBuilder();
@@ -63,23 +81,17 @@ namespace Olaf.Structure
             builder.append_printf("NumOfEntries: 0x%04x\n", header.NumOfEntries);
             builder.append_printf("SizeOfEntry: 0x%04x\n", header.SizeOfEntry);
             builder.append_printf("EntriesCRC32: 0x%04x\n", header.EntriesCRC32);
-            builder.append("\n\n");
-            stdout.printf(builder.str);
-        }
-
-        public void PrintPartition(uint index)
-        {
-            if (index > GetPartitionCount())
+            builder.append("\n");
+            builder.append("::: GPT Partitions :::\n");
+            for (int i=0; i < GetPartitionCount(); i++)
             {
-                stderr.printf("Requested partition %u out of bounds\n", index);
-                return;
+                GptPartition part = GetPartition(i);
+                string name = Util.UInt16ToString(part.PartitionName);
+                builder.append_printf("Partition %u) %s LBA:0x%08llx-0x%08llx\tAttrs: 0x%08llx\n",
+                                                i, name, part.StartLBA, part.EndLBA, part.Attributes);
             }
-
-            GptPartition part = this.Partitions[index];
-            string name = Util.UInt16ToString(part.PartitionName);
-            stdout.printf("Partition %u) %s LBA:0x%08llx-0x%08llx\tAttrs: 0x%08llx\n",
-                    index, name, part.StartLBA, part.EndLBA, part.Attributes
-            );
+            return builder.str;
         }
+
     }
 }
