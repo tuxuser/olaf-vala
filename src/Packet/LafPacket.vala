@@ -50,10 +50,9 @@ namespace Olaf.Packet
 
         public void SetBodyFromString(string body)
         {
-            // +1 as NULL-terminator
-            uint8[] tmp = new uint8[body.length + 1];
-            Memory.copy(tmp, body.to_ascii().data, body.length);
-            Body = tmp;
+            Body = body.to_ascii().data;
+            Body.resize(Body.length + 1);
+            Body[Body.length] = 0x00;
         }
 
         public void Deserialize(uint8[] data)

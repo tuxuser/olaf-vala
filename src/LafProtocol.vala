@@ -130,7 +130,7 @@ namespace Olaf
             return 0;
         }
 
-        public int SendCmdExec(string psexec)
+        public int SendCmdExec(string psexec, out string cmdReply)
         {
             if (SendCentMeter(2) != 0)
             {
@@ -147,10 +147,11 @@ namespace Olaf
                 int i;
                 //return -1;
             }
+            cmdReply = (string)response.Body;
             return 0;
         }
 
-        public int SendOpen(string filePath, out int fileHandle)
+        public int SendOpen(string filePath, out uint fileHandle)
         {
             if (SendCentMeter(2) != 0)
             {
@@ -167,7 +168,7 @@ namespace Olaf
                 return -1;
             }
 
-            fileHandle = (int)response.Header.Arg1;
+            fileHandle = response.Header.Arg1;
             return 0;
         }
 
@@ -263,7 +264,7 @@ namespace Olaf
         public int GetPartitionTable(out GPTPartitionTable partitionTable)
         {
             int ret = 0;
-            int fileHandle;
+            uint fileHandle;
             // "" fallsback to "/dev/block/mmcblk0"
             ret = SendOpen("", out fileHandle);
             assert(ret == 0);

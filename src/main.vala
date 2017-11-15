@@ -75,23 +75,10 @@ namespace Olaf
 				return 1;
 			}
 			
-			LAFProtocol protocol = new LAFProtocol(selectedDevice);
-			//protocol.SendHello();
-			/*
-			int fileHandle = 0;
-			if (protocol.SendOpen(filePath, out fileHandle) != 0)
-				return 2;
-			
-			stdout.printf("FileHandle opened for %s => %i\n", filePath, fileHandle);
-
-
-			stdout.printf("Closing FileHandle\n");
-			protocol.SendClose(fileHandle);
-			*/
-			
-
-		
+			LAFProtocol protocol = new LAFProtocol(selectedDevice);		
 			protocol.SendUnlock();
+			protocol.SendHello();
+			/* TESTING */
 
 			Structure.LAFProperties props;
 			if (protocol.GetLafProperties(out props) != 0)
@@ -113,6 +100,36 @@ namespace Olaf
 			}
 			stdout.printf(partTable.to_string());
 			
+			uint fileHandle = 0;
+			if (protocol.SendOpen("/dev/block/mmcblk0", out fileHandle) != 0)
+				return 3;
+
+			Vapi.Gpt.GptPartition? partition = partTable.GetPartitionByName("nvdata");
+			if (partition == null)
+				return 4;
+			else
+				stdout.printf("Found partition!\n");
+
+			
+			uint8[] readData;
+			protocol.SendRead(fileHandle, 0, 512, out readData);
+			protocol.SendClose(fileHandle);
+
+			while(true)
+			{
+				stdout.printf("# ");
+				string? input = stdin.read_line();
+				stdout.printf("\n");
+				if (input != null && input.length > 1)
+				{
+					if (input == "exit")
+						break;
+					string reply;
+					protocol.SendCmdExec(input, out reply);
+					stdout.printf(reply + "\n");
+				}
+			}
+
 			return 0;
 		}
 	}

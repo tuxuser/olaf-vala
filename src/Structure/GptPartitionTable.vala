@@ -51,7 +51,7 @@ namespace Olaf.Structure
             return this.partitionTable.gptHeader;
         }
 
-        public GptPartition? GetPartition(uint index)
+        public GptPartition? GetPartitionByIndex(uint index)
         {
             if (index > GetPartitionCount())
             {
@@ -60,6 +60,16 @@ namespace Olaf.Structure
             }
 
             return this.Partitions[index];
+        }
+
+        public GptPartition? GetPartitionByName(string name)
+        {
+            foreach(GptPartition part in this.Partitions)
+                if(Util.UInt16ToString(part.PartitionName) == name)
+                    return part;
+
+            stderr.printf("Partition \"%s\" not found!\n", name);
+            return null;
         }
 
         public string to_string()
@@ -85,7 +95,7 @@ namespace Olaf.Structure
             builder.append("::: GPT Partitions :::\n");
             for (int i=0; i < GetPartitionCount(); i++)
             {
-                GptPartition part = GetPartition(i);
+                GptPartition part = GetPartitionByIndex(i);
                 string name = Util.UInt16ToString(part.PartitionName);
                 builder.append_printf("Partition %u) %s LBA:0x%08llx-0x%08llx\tAttrs: 0x%08llx\n",
                                                 i, name, part.StartLBA, part.EndLBA, part.Attributes);
