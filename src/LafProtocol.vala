@@ -6,6 +6,9 @@ namespace Olaf
 {
     public class LAFProtocol
     {
+        private const uint BLOCK_SIZE = 512;
+        private const uint MAX_BLOCK_SIZE = (16 * 1024 - BLOCK_SIZE);
+
         // https://github.com/Lekensteyn/lglaf/blob/master/protocol.md
         public const uint VERSION = 0x01000004;
 
@@ -314,6 +317,29 @@ namespace Olaf
             return 0;
         }
 
+        private int ReadData(uint fileHandle, uint startOffset, uint size, out uint8[] outData)
+        {
+            outData = new uint8[size];
+
+            int ret;
+            uint chunkSize = 0;
+            uint offset = startOffset;
+            uint8[] readData;
+
+            while (offset < size)
+            {
+                if((size - offset) > MAX_BLOCK_SIZE)
+                    chunkSize = MAX_BLOCK_SIZE;
+                else
+                    chunkSize = (size - offset);
+                ret = SendRead(fileHandle, offset / BLOCK_SIZE, chunkSize, out readData);
+                assert(ret == 0);
+                Memory.copy(&outData[offset], readData, chunkSize);
+                offset += chunkSize;
+            }
+            return 0;
+        }
+
         public int ReadFile(string deviceFilePath, out uint8[] outData)
         {
             int ret;
@@ -325,35 +351,21 @@ namespace Olaf
             ret = SendOpen(deviceFilePath, out fileHandle);
             assert(ret == 0);
 
-            // Reserve output buffer
-            outData = new uint8[fileSize];
-            
-            int offset = 0;
-            int position = 0;
-            int readSize = 0;
-            uint8[] readData;
-            while (offset < fileSize)
-            {
-                if ((position + 512) > fileSize)
-                    readSize = fileSize - position;
-                else
-                    readSize = 512;
-                ret = SendRead(fileHandle, offset, readSize, out readData);
-                assert(ret == 0);
-                Memory.copy(&outData[position], readData, readSize);
-                position += readSize;
-                offset++;
-            }
+            ret = ReadData(fileHandle, 0, fileSize, out outData);
+            assert(ret == 0);
+
             ret = SendClose(fileHandle);
             assert(ret == 0);
             stdout.printf("Read %i bytes from %s\n", outData.length, deviceFilePath);
             stdout.printf((string)outData);
             return 0;
         }
+
         public int WriteFile(string deviceFilePath, uint8[] inData)
         {
             return 0;
         }
+
         public int DeleteFile(string deviceFilePath)
         {
             int ret;
