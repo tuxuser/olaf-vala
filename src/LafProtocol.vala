@@ -172,6 +172,7 @@ namespace Olaf
             return 0;
         }
 
+        // offset in blocks: size of 512bytes
         public int SendRead(uint fileHandle, uint offset, uint length, out uint8[] outData)
         {
             LAFPacket response = new LAFPacket.Empty();
@@ -284,6 +285,88 @@ namespace Olaf
             ret = this.Device.Read(response);
             assert(ret == 0);
             phoneInfo = new PhoneInfo(response);
+
+            return 0;
+        }
+
+        public int GetFilesizeFromDevice(string deviceFilePath, out int fileSize)
+        {
+            int ret;
+            string reply;
+            ret = SendCmdExec("ls -l " + deviceFilePath, out reply);
+            assert(ret == 0);
+            if (reply == null || reply.length == 0)
+            {
+                stderr.printf("File \"%s\" not found!\n", deviceFilePath);
+                return 1;
+            }
+
+            // Replace multiple whitespaces with a single one
+            // original line ex. "-rwxr-x--- root     root        10048 1970-01-01 00:00 testfile"
+			reply  = /(\s+)/.replace (reply, -1, 0, " ");
+            string[] columns = reply.split(" ");
+            fileSize = columns[3].to_int();
+            if (fileSize == 0)
+            {
+                stderr.printf("FileSize: 0, either invalid file or parsing gone wrong\n");
+                return 2;
+            }
+            return 0;
+        }
+
+        public int ReadFile(string deviceFilePath, out uint8[] outData)
+        {
+            int ret;
+            int fileSize;
+            ret = GetFilesizeFromDevice(deviceFilePath, out fileSize);
+            assert(ret == 0);
+            
+            uint fileHandle = 0;
+            ret = SendOpen(deviceFilePath, out fileHandle);
+            assert(ret == 0);
+
+            // Reserve output buffer
+            outData = new uint8[fileSize];
+            
+            int offset = 0;
+            int position = 0;
+            int readSize = 0;
+            uint8[] readData;
+            while (offset < fileSize)
+            {
+                if ((position + 512) > fileSize)
+                    readSize = fileSize - position;
+                else
+                    readSize = 512;
+                ret = SendRead(fileHandle, offset, readSize, out readData);
+                assert(ret == 0);
+                Memory.copy(&outData[position], readData, readSize);
+                position += readSize;
+                offset++;
+            }
+            ret = SendClose(fileHandle);
+            assert(ret == 0);
+            stdout.printf("Read %i bytes from %s\n", outData.length, deviceFilePath);
+            stdout.printf((string)outData);
+            return 0;
+        }
+        public int WriteFile(string deviceFilePath, uint8[] inData)
+        {
+            return 0;
+        }
+        public int DeleteFile(string deviceFilePath)
+        {
+            int ret;
+            int fileSize = 0;
+            ret = GetFilesizeFromDevice(deviceFilePath, out fileSize);
+            assert(ret == 0);
+            if(fileSize == 0)
+            {
+                stderr.printf("File %s does not seem to exist\n", deviceFilePath);
+                return 1;
+            }
+            ret = SendUnlink(deviceFilePath);
+            assert(ret == 0);
 
             return 0;
         }

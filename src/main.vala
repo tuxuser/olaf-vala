@@ -112,8 +112,7 @@ namespace Olaf
 
 			
 			uint8[] readData;
-			protocol.SendRead(fileHandle, 0, 512, out readData);
-			protocol.SendClose(fileHandle);
+			protocol.ReadFile("/init.lge.rc", out readData);
 
 			while(true)
 			{
