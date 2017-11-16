@@ -50,8 +50,9 @@ namespace Olaf.Packet
 
         public void SetBodyFromString(string body)
         {
-            Body = body.to_ascii().data;
-            Body.resize(Body.length + 1);
+            uint8[] data = body.to_ascii().data;
+            Body = new uint8[data.length + 1];
+            Memory.copy(Body, data, data.length);
             Body[Body.length] = 0x00;
         }
 

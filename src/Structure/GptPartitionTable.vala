@@ -97,7 +97,7 @@ namespace Olaf.Structure
             {
                 GptPartition part = GetPartitionByIndex(i);
                 string name = Util.UInt16ToString(part.PartitionName);
-                builder.append_printf("Partition %u) %s LBA:0x%08llx-0x%08llx\tAttrs: 0x%08llx\n",
+                builder.append_printf("%u) %s LBA:0x%08llx-0x%08llx\tAttrs: 0x%08llx\n",
                                                 i, name, part.StartLBA, part.EndLBA, part.Attributes);
             }
             return builder.str;
