@@ -218,7 +218,9 @@ namespace Olaf
 				return;
 			}
 
-			protocol.SendErase((uint)part.StartLBA, (uint)(part.EndLBA-part.StartLBA));
+			protocol.SendErase(remoteFileHandle,
+								(uint)part.StartLBA,
+								(uint)(part.EndLBA-part.StartLBA));
 
 			uint64 offset = part.StartLBA * 512;
 			uint64 endOffset = offset + fileSize;
