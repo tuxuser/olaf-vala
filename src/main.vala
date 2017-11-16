@@ -43,6 +43,8 @@ namespace Olaf
 			stdout.printf("\tshell - Execute an interactive shell session\n");
 			stdout.printf("\tinfo - Show phone / LAF info\n");
 			stdout.printf("\tgpt - Show GPT partition table of LAF device\n");
+			stdout.printf("\treboot - Reboot the device\n");
+			stdout.printf("\tpoweroff - Power off the device\n");
 			stdout.printf("\thelp - Show this listing right here\n");
 		}
 
@@ -194,6 +196,12 @@ namespace Olaf
 					break;
 				case "gpt":
 					ShowGptPartitionTable(protocol);
+					break;
+				case "reboot":
+					protocol.SendReboot();
+					break;
+				case "poweroff":
+					protocol.SendPoweroff();
 					break;
 				case "help":
 					ShowUsage();
