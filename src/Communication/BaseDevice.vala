@@ -106,8 +106,8 @@ namespace Olaf.Communication
 
         public int ReceivePacketUsb(out LAFPacket outPacket)
         {
-            // 16 mb buffer OMG!!
-            uint8[] buffer = new uint8[16*1024*1024];
+            // 16 kb is enough
+            uint8[] buffer = new uint8[16*1024];
             int ret = Read(buffer);
             if (ret != 0)
             {

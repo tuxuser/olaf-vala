@@ -97,8 +97,9 @@ namespace Olaf
 					if (input == "exit")
 						break;
 					string reply;
-					protocol.SendCmdExec(input, out reply);
-					stdout.printf(reply + "\n");
+					if(protocol.SendCmdExec(input, out reply) == 0)
+						stdout.printf(reply);
+					stdout.printf("\n");
 				}
 			}
 		}
