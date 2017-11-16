@@ -129,10 +129,10 @@ namespace Olaf
 			InitializeMaps();
 			Communication.BaseEnumerator enumerator;
 	#if WIN32 || MINGW
-			stdout.printf("Windows -> Choosing serial communication\n");
+			debug("Windows -> Choosing serial communication\n");
 			enumerator = new Communication.SerialEnumerator();
 	#else
-			stdout.printf("Unix -> Choosing usb communication\n");
+			debug("Unix -> Choosing usb communication\n");
 			enumerator = new Communication.UsbEnumerator();
 	#endif
 
@@ -180,10 +180,10 @@ namespace Olaf
 					PullFile(protocol, args[2], args[3]);
 					break;
 				case "dump":
-					stderr.printf("Sorry, not yet implemented\n");
+					error("Sorry, not yet implemented\n");
 					break;
 				case "flash":
-					stderr.printf("Sorry, not yet implemented\n");
+					error("Sorry, not yet implemented\n");
 					break;
 				case "shell":
 					RunCmdShell(protocol);
@@ -199,7 +199,7 @@ namespace Olaf
 					ShowUsage();
 					break;
 				default:
-					stderr.printf("Command \"%s\" is unknown. Try \"help\" !\n", command);
+					error("Command \"%s\" is unknown. Try \"help\" !\n", command);
 					break;
 			}
 

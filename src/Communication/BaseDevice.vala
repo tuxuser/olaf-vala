@@ -62,14 +62,14 @@ namespace Olaf.Communication
         public int SendPacket(LAFPacket packet)
         {
             uint8[] data = packet.Serialize();
-            stdout.printf(":::Outgoing Packet:::\n");
-            stdout.printf(packet.to_string());
+            debug(":::Outgoing Packet:::\n");
+            debug(packet.to_string());
             if (packet.Header.BodyLength > 0)
             {
-                stdout.printf(":::Body:::\n");
-                Util.hexdump(packet.Body);
+                debug(":::Body:::\n");
+                //Util.hexdump(packet.Body);
             }
-            stdout.printf("\n");
+            debug("\n");
             return Write(data);
         }
 
@@ -84,8 +84,8 @@ namespace Olaf.Communication
 
             outPacket = new LAFPacket.Empty();
             outPacket.Deserialize(header);
-            stdout.printf(":::Incoming Packet:::\n");
-            stdout.printf(outPacket.to_string());
+            debug(":::Incoming Packet:::\n");
+            debug(outPacket.to_string());
 
             if (outPacket.Header.BodyLength > 0)
             {
@@ -97,10 +97,10 @@ namespace Olaf.Communication
                     return ret;
                 }
                 outPacket.SetBody(body);
-                stdout.printf(":::Body:::\n");
-                Util.hexdump(outPacket.Body);
+                debug(":::Body:::\n");
+                //Util.hexdump(outPacket.Body);
             }
-            stdout.printf("\n");
+            debug("\n");
             return 0;
         }
 
@@ -115,17 +115,17 @@ namespace Olaf.Communication
             }
             outPacket = new LAFPacket.Empty();
             outPacket.Deserialize(buffer);
-            stdout.printf(":::Incoming Packet:::\n");
-            stdout.printf(outPacket.to_string());
+            debug(":::Incoming Packet:::\n");
+            debug(outPacket.to_string());
             if (outPacket.Header.BodyLength > 0)
             {
                 uint8[] body = new uint8[outPacket.Header.BodyLength];
                 Memory.copy(body, &buffer[sizeof(LAF_PACKET_HDR)], outPacket.Header.BodyLength);
                 outPacket.SetBody(body);
-                stdout.printf(":::Body:::\n");
-                Util.hexdump(outPacket.Body);
+                debug(":::Body:::\n");
+                //Util.hexdump(outPacket.Body);
             }  
-            stdout.printf("\n");
+            debug("\n");
             return 0;
         }
 

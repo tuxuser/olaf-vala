@@ -35,7 +35,7 @@ namespace Olaf.Communication
             }
 
             stdout.printf("Connected to %s\n", this.to_string());
-            PrintConfig();
+            debug(GetConfig());
             return true;
         }
 
@@ -68,26 +68,29 @@ namespace Olaf.Communication
             return 0;
         }
 
-        private void PrintConfig()
+        private string GetConfig()
         {
             Return ret;
             LibSerialPort.Config config;
             LibSerialPort.Config.new(out config);
             if ((ret = this.Port.get_config(config)) != Return.OK)
             {
-                stderr.printf("Failed to get serial port config\n");
-                stderr.printf("LibSerialPort Error: %s\n", ret.to_string());
-                return;
+                error("Failed to get serial port config\n");
+                error("LibSerialPort Error: %s\n", ret.to_string());
+                return "<GETTING SERIAL PORT CONFIG FAILED>\n\n";
             }
 
             int baudrate = 0, bits = 0, stopbits = 0;
             config.get_baudrate(out baudrate);
             config.get_bits(out bits);
             config.get_stopbits(out stopbits);
-            stdout.printf("::: SERIAL PORT CONFIG :::\n");
-            stdout.printf("Baudrate: %i\n", baudrate);
-            stdout.printf("Bits: %i\n", bits);
-            stdout.printf("Stopbits: %i\n\n", stopbits);
+
+            StringBuilder builder = new StringBuilder();
+            builder.append_printf("::: SERIAL PORT CONFIG :::\n");
+            builder.append_printf("Baudrate: %i\n", baudrate);
+            builder.append_printf("Bits: %i\n", bits);
+            builder.append_printf("Stopbits: %i\n\n", stopbits);
+            return builder.str;
         }
 
         public override string to_string()
