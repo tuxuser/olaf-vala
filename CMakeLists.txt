@@ -53,7 +53,7 @@ file(GLOB_RECURSE VAPI_LIST RELATIVE "${CMAKE_SOURCE_DIR}" "vapi/*.vapi")
 message(STATUS "Found Sources: ${source_list}")
 message(STATUS "Found VAPIs: ${VAPI_LIST}")
 
-#set(valac_flags "-g")
+set(valac_flags "-g")
 
 if(MINGW)
 	list(APPEND valac_flags -D MINGW)

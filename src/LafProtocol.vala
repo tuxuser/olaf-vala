@@ -348,6 +348,7 @@ namespace Olaf
             uint64 rest = 0;
             uint64 position = startOffset;
             uint64 end = startOffset + size;
+            int filePos = 0;
             uint8[] readData;
 
             while (position < end)
@@ -356,8 +357,9 @@ namespace Olaf
                 chunkSize = rest > MAX_BLOCK_SIZE ? MAX_BLOCK_SIZE : (uint)rest;
                 ret = SendRead(fileHandle, (uint)(position / BLOCK_SIZE), chunkSize, out readData);
                 assert(ret == 0);
-                Memory.copy(&outData[position], readData, chunkSize);
+                Memory.copy(&outData[filePos], readData, chunkSize);
                 position += chunkSize;
+                filePos += (int)chunkSize;
             }
             return 0;
         }
@@ -375,6 +377,7 @@ namespace Olaf
             int ret;
             uint64 position = startOffset;
             uint64 end = startOffset + inData.length;
+            int filePos = 0;
             uint8[] currentData = new uint8[MAX_BLOCK_SIZE];
 
             while (position < end)
@@ -382,10 +385,11 @@ namespace Olaf
                 if ((end - position) < MAX_BLOCK_SIZE)
                     currentData.resize((int)(end - position));
                 
-                Memory.copy(currentData, &inData[position], currentData.length);
+                Memory.copy(currentData, &inData[filePos], currentData.length);
                 ret = SendWrite(fileHandle, (uint)(position / BLOCK_SIZE), currentData);
                 assert(ret == 0);
                 position += currentData.length;
+                filePos += currentData.length;
             }
             return 0;
         }

@@ -50,6 +50,12 @@ namespace Olaf.Packet
 
         public void SetBodyFromString(string body)
         {
+            if (body.length == 0)
+            {
+                // Just add null terminator
+                Body = new uint8[]{0x00};
+                return;
+            }
             uint8[] data = body.to_ascii().data;
             Body = new uint8[data.length + 1];
             Memory.copy(Body, data, data.length);
