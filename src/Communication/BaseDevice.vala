@@ -73,70 +73,56 @@ namespace Olaf.Communication
             return Write(data);
         }
 
-        public int ReceivePacketSerial(out LAFPacket outPacket)
+        public int ReceivePacket(out LAFPacket outPacket)
         {
-            uint8[] header = new uint8[sizeof(LAF_PACKET_HDR)];
-            int ret = Read(header);
+            uint8[] buffer;
+            /*
+             * USB: Read all at once
+             * Serial: Read chunked, first header, then body
+             */
+            if (this.Interface == InterfaceType.USB)
+                buffer = new uint8[16*1024];
+            else
+                buffer = new uint8[sizeof(LAF_PACKET_HDR)];
+
+            int ret = Read(buffer);
             if (ret != 0)
             {
+                debug("Failed to read data of size: %i\n", buffer.length);
                 return ret;
             }
 
             outPacket = new LAFPacket.Empty();
-            outPacket.Deserialize(header);
+            outPacket.Deserialize(buffer);
             debug(":::Incoming Packet:::\n");
             debug(outPacket.to_string());
 
             if (outPacket.Header.BodyLength > 0)
             {
-                uint8[] body = new uint8[outPacket.Header.BodyLength];
-                ret = Read(body);
-                if (ret != 0)
+                uint8[] body;
+                if (this.Interface == InterfaceType.USB)
                 {
-                    stderr.printf("Failed to read body from packet\n");
-                    return ret;
+                    // Read from original buffer
+                    body = new uint8[outPacket.Header.BodyLength];
+                    Memory.copy(body, &buffer[sizeof(LAF_PACKET_HDR)], outPacket.Header.BodyLength);
+                }
+                else // Serial
+                {
+                    // Read a new chunk from device
+                    body = new uint8[outPacket.Header.BodyLength];
+                    ret = Read(body);
+                    if (ret != 0)
+                    {
+                        debug("Failed to read body from serial\n");
+                        return ret;
+                    }
                 }
                 outPacket.SetBody(body);
                 debug(":::Body:::\n");
                 //Util.hexdump(outPacket.Body);
             }
-            debug("\n");
-            return 0;
-        }
 
-        public int ReceivePacketUsb(out LAFPacket outPacket)
-        {
-            // 16 kb is enough
-            uint8[] buffer = new uint8[16*1024];
-            int ret = Read(buffer);
-            if (ret != 0)
-            {
-                return ret;
-            }
-            outPacket = new LAFPacket.Empty();
-            outPacket.Deserialize(buffer);
-            debug(":::Incoming Packet:::\n");
-            debug(outPacket.to_string());
-            if (outPacket.Header.BodyLength > 0)
-            {
-                uint8[] body = new uint8[outPacket.Header.BodyLength];
-                Memory.copy(body, &buffer[sizeof(LAF_PACKET_HDR)], outPacket.Header.BodyLength);
-                outPacket.SetBody(body);
-                debug(":::Body:::\n");
-                //Util.hexdump(outPacket.Body);
-            }  
-            debug("\n");
             return 0;
-        }
-
-        public int ReceivePacket(out LAFPacket outPacket)
-        {
-            if (InterfaceType.USB == this.Interface)
-                return ReceivePacketUsb(out outPacket);
-            else if (InterfaceType.SERIAL == this.Interface)
-                return ReceivePacketSerial(out outPacket);
-            else
-                assert_not_reached();
         }
 
         public virtual string to_string()
