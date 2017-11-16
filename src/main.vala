@@ -218,7 +218,7 @@ namespace Olaf
 				return;
 			}
 
-			// TODO: erase partition blocks
+			protocol.SendErase((uint)part.StartLBA, (uint)(part.EndLBA-part.StartLBA));
 
 			uint64 offset = part.StartLBA * 512;
 			uint64 endOffset = offset + fileSize;

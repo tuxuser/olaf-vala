@@ -206,6 +206,21 @@ namespace Olaf
             return 0;
         }
 
+        public int SendErase(uint startBlock, uint blockCount)
+        {
+            // GPT partition table is 0x22, we dont want to overwrite
+            assert (startBlock > 0x22);
+            LAFPacket response = new LAFPacket.Empty();
+            LAFPacket request = new LAFPacket.WithMainCmdEnum(LAFCommand.ERASE,
+                                                              startBlock,
+                                                              blockCount);
+            if(SendAndReceive(request, out response, "ERSE") != 0)
+            {
+                return -1;
+            }
+            return 0;
+        }
+
         public int SendClose(uint fileHandle)
         {
             LAFPacket response = new LAFPacket.Empty();
