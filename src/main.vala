@@ -35,6 +35,89 @@ namespace Olaf
 			return devices.nth_data(choice);
 		}
 
+		private static void ShowUsage()
+		{
+			stdout.printf("\tpull [remote file path] [local file path]\n");
+			stdout.printf("\tdump [partition name] [local destination file]\n");
+			stdout.printf("\tflash [partition name] [local source file]\n");
+			stdout.printf("\tshell - Execute an interactive shell session\n");
+			stdout.printf("\tinfo - Show phone / LAF info\n");
+			stdout.printf("\tgpt - Show GPT partition table of LAF device\n");
+			stdout.printf("\thelp - Show this listing right here\n");
+		}
+
+		// TODO: This will overflow if filesize is over 2GB
+		private static void LoadFile(string filePath, out uint8[] outData)
+		{
+			Posix.FILE f = Posix.FILE.open(filePath, "rb");
+			f.seek(0, Posix.FILE.SEEK_END);
+			long filesize = f.tell();
+			f.seek(0, Posix.FILE.SEEK_SET);
+			outData = new uint8[filesize];
+			f.read(outData, filesize, 1);
+		}
+
+		private static void SaveFile(string filePath, uint8[] inData)
+		{
+			Posix.FILE f = Posix.FILE.open(filePath, "wb");
+			f.write(inData, inData.length, 1);
+			f.flush();
+		}
+
+		private static void ShowPhoneInfo(LAFProtocol protocol)
+		{
+			Structure.PhoneInfo phoneInfo;
+			protocol.GetPhoneInfo(out phoneInfo);
+			stdout.printf(phoneInfo.to_string());
+		}
+
+		private static void ShowLafProps(LAFProtocol protocol)
+		{
+			Structure.LAFProperties props;
+			if (protocol.GetLafProperties(out props) != 0)
+			{
+				stderr.printf("Failed to get LAF properties\n");
+				return;
+			}
+			stdout.printf(props.to_string());
+		}
+
+		private static void RunCmdShell(LAFProtocol protocol)
+		{
+			while(true)
+			{
+				stdout.printf("#LAF>");
+				string? input = stdin.read_line();
+				stdout.printf("\n");
+				if (input != null && input.length > 1)
+				{
+					if (input == "exit")
+						break;
+					string reply;
+					protocol.SendCmdExec(input, out reply);
+					stdout.printf(reply + "\n");
+				}
+			}
+		}
+
+		private static void ShowGptPartitionTable(LAFProtocol protocol)
+		{
+			Structure.GPTPartitionTable partTable;
+			if (protocol.GetPartitionTable(out partTable) != 0)
+			{
+				stderr.printf("Failed to get partition table\n");
+				return;
+			}
+			stdout.printf(partTable.to_string());
+		}
+
+		private static void PullFile(LAFProtocol protocol, string remotePath, string localDestinationPath)
+		{
+			uint8[] readData;
+			protocol.ReadFile(remotePath, out readData);
+			SaveFile(localDestinationPath, readData);
+		}
+
 		public static int main(string[] args)
 		{
 			// Disable stdout/stderr buffering
@@ -65,7 +148,7 @@ namespace Olaf
 			Communication.LGDevice selectedDevice = ChooseDevice(devices);
 			if(selectedDevice == null)
 			{
-				stdout.printf("Bye!\n");
+				stdout.printf("Invalid choice, Bye!\n");
 				return 2;
 			}
 
@@ -77,58 +160,56 @@ namespace Olaf
 			
 			LAFProtocol protocol = new LAFProtocol(selectedDevice);		
 			protocol.SendUnlock();
-			protocol.SendHello();
-			/* TESTING */
 
-			Structure.LAFProperties props;
-			if (protocol.GetLafProperties(out props) != 0)
+			if (args.length < 2)
 			{
-				stderr.printf("Failed to get device properties\n");
-				return 2;
-			}
-			stdout.printf(props.to_string());
-
-			Structure.PhoneInfo phoneInfo;
-			protocol.GetPhoneInfo(out phoneInfo);
-			stdout.printf(phoneInfo.to_string());
-
-			Structure.GPTPartitionTable partTable;
-			if (protocol.GetPartitionTable(out partTable) != 0)
-			{
-				stderr.printf("Failed to get partition table\n");
+				stderr.printf("No arguments provided!\n");
+				ShowUsage();
 				return 3;
 			}
-			stdout.printf(partTable.to_string());
-			
-			uint fileHandle = 0;
-			if (protocol.SendOpen("/dev/block/mmcblk0", out fileHandle) != 0)
-				return 3;
+			string command = args[1];
+			switch (command)
+			{
+				case "pull":
+					if (args.length < 4)
+					{
+						stderr.printf("pull: Missing remote path and/or local destination\n");
+						ShowUsage();
+						break;
+					}
+					PullFile(protocol, args[2], args[3]);
+					break;
+				case "dump":
+					stderr.printf("Sorry, not yet implemented\n");
+					break;
+				case "flash":
+					stderr.printf("Sorry, not yet implemented\n");
+					break;
+				case "shell":
+					RunCmdShell(protocol);
+					break;
+				case "info":
+					ShowPhoneInfo(protocol);
+					ShowLafProps(protocol);
+					break;
+				case "gpt":
+					ShowGptPartitionTable(protocol);
+					break;
+				case "help":
+					ShowUsage();
+					break;
+				default:
+					stderr.printf("Command \"%s\" is unknown. Try \"help\" !\n", command);
+					break;
+			}
 
+			/*
 			Vapi.Gpt.GptPartition? partition = partTable.GetPartitionByName("nvdata");
 			if (partition == null)
 				return 4;
 			else
 				stdout.printf("Found partition!\n");
-
-			
-			uint8[] readData;
-			protocol.ReadFile("/init.lge.rc", out readData);
-
-			while(true)
-			{
-				stdout.printf("# ");
-				string? input = stdin.read_line();
-				stdout.printf("\n");
-				if (input != null && input.length > 1)
-				{
-					if (input == "exit")
-						break;
-					string reply;
-					protocol.SendCmdExec(input, out reply);
-					stdout.printf(reply + "\n");
-				}
-			}
-
+			*/
 			return 0;
 		}
 	}

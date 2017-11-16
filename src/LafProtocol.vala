@@ -292,7 +292,7 @@ namespace Olaf
             return 0;
         }
 
-        public int GetFilesizeFromDevice(string deviceFilePath, out int fileSize)
+        public int GetFilesizeFromDevice(string deviceFilePath, out uint64 fileSize)
         {
             int ret;
             string reply;
@@ -308,7 +308,7 @@ namespace Olaf
             // original line ex. "-rwxr-x--- root     root        10048 1970-01-01 00:00 testfile"
 			reply  = /(\s+)/.replace (reply, -1, 0, " ");
             string[] columns = reply.split(" ");
-            fileSize = columns[3].to_int();
+            fileSize = uint64.parse(columns[3]);
             if (fileSize == 0)
             {
                 stderr.printf("FileSize: 0, either invalid file or parsing gone wrong\n");
@@ -317,25 +317,60 @@ namespace Olaf
             return 0;
         }
 
-        private int ReadData(uint fileHandle, uint startOffset, uint size, out uint8[] outData)
+        // startOffset: offset in bytes, size: size in bytes
+        // gets then converted to block notation before sending via LAF cmd
+        public int ReadData(uint fileHandle, uint64 startOffset, uint64 size, out uint8[] outData)
         {
+            if (startOffset % BLOCK_SIZE != 0)
+            {
+                stderr.printf("StartOffset not block-aligned, try again!\n");
+                return 1;
+            }
             outData = new uint8[size];
 
             int ret;
             uint chunkSize = 0;
-            uint offset = startOffset;
+            uint64 rest = 0;
+            uint64 position = startOffset;
+            uint64 end = startOffset + size;
             uint8[] readData;
 
-            while (offset < size)
+            while (position < end)
             {
-                if((size - offset) > MAX_BLOCK_SIZE)
-                    chunkSize = MAX_BLOCK_SIZE;
-                else
-                    chunkSize = (size - offset);
-                ret = SendRead(fileHandle, offset / BLOCK_SIZE, chunkSize, out readData);
+                rest = end - position;
+                chunkSize = rest > MAX_BLOCK_SIZE ? MAX_BLOCK_SIZE : (uint)rest;
+                ret = SendRead(fileHandle, (uint)(position / BLOCK_SIZE), chunkSize, out readData);
                 assert(ret == 0);
-                Memory.copy(&outData[offset], readData, chunkSize);
-                offset += chunkSize;
+                Memory.copy(&outData[position], readData, chunkSize);
+                position += chunkSize;
+            }
+            return 0;
+        }
+
+        // startOffset: offset in bytes
+        // gets then converted to block notation before sending via LAF cmd
+        public int WriteData(uint fileHandle, uint64 startOffset, uint8[] inData)
+        {
+            if (startOffset % BLOCK_SIZE != 0)
+            {
+                stderr.printf("StartOffset not block-aligned, try again!\n");
+                return 1;
+            }
+
+            int ret;
+            uint64 position = startOffset;
+            uint64 end = startOffset + inData.length;
+            uint8[] currentData = new uint8[MAX_BLOCK_SIZE];
+
+            while (position < end)
+            {
+                if ((end - position) < MAX_BLOCK_SIZE)
+                    currentData.resize((int)(end - position));
+                
+                Memory.copy(currentData, &inData[position], currentData.length);
+                ret = SendWrite(fileHandle, (uint)(position / BLOCK_SIZE), currentData);
+                assert(ret == 0);
+                position += currentData.length;
             }
             return 0;
         }
@@ -343,7 +378,7 @@ namespace Olaf
         public int ReadFile(string deviceFilePath, out uint8[] outData)
         {
             int ret;
-            int fileSize;
+            uint64 fileSize;
             ret = GetFilesizeFromDevice(deviceFilePath, out fileSize);
             assert(ret == 0);
             
@@ -369,7 +404,7 @@ namespace Olaf
         public int DeleteFile(string deviceFilePath)
         {
             int ret;
-            int fileSize = 0;
+            uint64 fileSize = 0;
             ret = GetFilesizeFromDevice(deviceFilePath, out fileSize);
             assert(ret == 0);
             if(fileSize == 0)
