@@ -44,6 +44,7 @@ namespace Olaf
 			stdout.printf("\tshell - Execute an interactive shell session\n");
 			stdout.printf("\tinfo - Show phone / LAF info\n");
 			stdout.printf("\tgpt - Show GPT partition table of LAF device\n");
+			stdout.printf("\tkdzinfo - Show info about KDZ file\n");
 			stdout.printf("\treboot - Reboot the device\n");
 			stdout.printf("\tpoweroff - Power off the device\n");
 			stdout.printf("\thelp - Show this listing right here\n");
@@ -245,6 +246,18 @@ namespace Olaf
 			stdout.printf("Writing partition finished!\n");
 		}
 
+		public static void ShowKdzInfo(string path)
+		{
+			Posix.FILE? f = Posix.FILE.open(path, "rb");
+			if (f == null)
+			{
+				stderr.printf("Failed to open file \"%s\"\n", path);
+				return;
+			}
+			Kdz info = new Kdz(f);
+			stdout.printf(info.to_string());
+		}
+
 		public static int main(string[] args)
 		{
 			// Disable stdout/stderr buffering
@@ -330,6 +343,15 @@ namespace Olaf
 				case "info":
 					ShowPhoneInfo(protocol);
 					ShowLafProps(protocol);
+					break;
+				case "kdzinfo":
+					if (args.length < 3)
+					{
+						stderr.printf("kdzinfo: Missing file argument\n");
+						ShowUsage();
+						break;
+					}
+					ShowKdzInfo(args[2]);
 					break;
 				case "gpt":
 					GPTPartitionTable table = GetGptPartitionTable(protocol);
