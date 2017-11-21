@@ -7,27 +7,36 @@ namespace Olaf.Structure
         private const uint32 DZ_FILE_MAGIC = 0x74189632;
         private const uint32 DZ_CHUNK_MAGIC = 0x78951230;
 
+        private Posix.FILE? File;
+
         private KdzHeader Header;
         private KdzEntry[] KdzEntries;
 
         private DzHeader DzFile;
         private DzChunk[] DzChunks;
 
-        public Kdz(Posix.FILE file)
+        private string DzFilename;
+        private ulong DzOffset;
+
+        public Kdz(string filePath)
         {
-            // Ensure null position
-            file.seek(0, Posix.FILE.SEEK_SET);
+            this.File = Posix.FILE.open(filePath, "rb");
+            if (this.File == null)
+            {
+                stderr.printf("Failed to open file \"%s\"\n", filePath);
+                return;
+            }
 
             this.Header = new KdzHeader();
             // Read Header fields first
-            file.read(&this.Header, sizeof(KdzHeader), 1);
+            this.File.read(&this.Header, sizeof(KdzHeader), 1);
 
             // Read the contained kdz entries
-            long length = this.Header.HeaderSize - file.tell();
+            ulong length = (this.Header.HeaderSize - sizeof(KdzHeader));
             this.KdzEntries = new KdzEntry[length / sizeof(KdzEntry)];
             for (int i = 0; i < this.KdzEntries.length; i++)
             {
-                file.read(&this.KdzEntries[i], sizeof(KdzEntry), 1);
+                this.File.read(&this.KdzEntries[i], sizeof(KdzEntry), 1);
                 // Check for last-entry-marker
                 if (this.KdzEntries[i].FileName[0] == 0x3)
                 { // Resize array
@@ -38,26 +47,27 @@ namespace Olaf.Structure
             }
 
             // Search the DZ file
-            KdzEntry? dz = null;
+            this.DzOffset = 0;
             foreach(KdzEntry entry in this.KdzEntries)
             {
                 if(((string)entry.FileName).ascii_down().has_suffix(".dz"))
                 {
                     stdout.printf("Found DZ File: %s\n", (string)entry.FileName);
-                    dz = entry;
+                    this.DzOffset = (ulong)entry.FileOffset;
+                    this.DzFilename = (string)entry.FileName;
                 }
             }
 
-            if (dz == null)
+            if (this.DzOffset == 0)
             {
                 stderr.printf("No DZ File found!\n");
                 return;
             }
             
             // Read the DZ file
-            file.seek((long)dz.FileOffset, Posix.FILE.SEEK_SET);
+            this.File.seek((long)this.DzOffset, Posix.FILE.SEEK_SET);
             this.DzFile = new DzHeader();
-            file.read(&this.DzFile, sizeof(DzHeader), 1);
+            this.File.read(&this.DzFile, sizeof(DzHeader), 1);
             // Check DZ file magic
             if (this.DzFile.Magic != DZ_FILE_MAGIC)
             {
@@ -71,20 +81,62 @@ namespace Olaf.Structure
                 stderr.printf("Only supporting v2.1 for now...\n");
                 return;
             }
+
             // Read DZ chunks
             this.DzChunks = new DzChunk[this.DzFile.ChunkCount];
             for (int i = 0; i < this.DzFile.ChunkCount; i++)
             {
-                file.read(&this.DzChunks[i], sizeof(DzChunk), 1);
+                this.File.read(&this.DzChunks[i], sizeof(DzChunk), 1);
                 if (this.DzChunks[i].Magic != DZ_CHUNK_MAGIC)
                 {
                     stderr.printf("DZ Chunk has invalid magic!\n");
                     return;
                 }
                 // Forward to next chunk, skipping the chunk data
-                file.seek(this.DzChunks[i].DataSize, Posix.FILE.SEEK_CUR);
+                this.File.seek(this.DzChunks[i].DataSize, Posix.FILE.SEEK_CUR);
             }
-            file.rewind();
+            this.File.rewind();
+        }
+
+        public void Extract(string destinationFilePath)
+        {
+            uint8[] buf;
+            string destination = "";
+            foreach(KdzEntry kdzEntry in this.KdzEntries)
+            {
+                destination = Path.build_path(Path.DIR_SEPARATOR_S, destinationFilePath, (string)kdzEntry.FileName);
+                Posix.FILE? f = Posix.FILE.open(destination, "wb");
+                if (f == null)
+                {
+                    stderr.printf("Failed to open file \"%s\" for writing!\n", destination);
+                    return;
+                }
+                stdout.printf("* Extracting KDZ file: \"%s\"\n", (string)kdzEntry.FileName);
+                buf = new uint8[(ulong)kdzEntry.FileSize];
+                this.File.seek((long)kdzEntry.FileOffset, Posix.FILE.SEEK_SET);
+                this.File.read(buf, (size_t)kdzEntry.FileSize, 1);
+                f.write(buf, (size_t)kdzEntry.FileSize, 1);
+            }
+
+            // Set to first DZ data blob
+            long offset = (long)(this.DzOffset + sizeof(DzHeader) + sizeof(DzChunk));
+            foreach(DzChunk dzChunk in this.DzChunks)
+            {
+                destination = Path.build_path(Path.DIR_SEPARATOR_S, destinationFilePath, (string)dzChunk.FileName);
+                Posix.FILE? f = Posix.FILE.open(destination, "wb");
+                if (f == null)
+                {
+                    stderr.printf("Failed to open file \"%s\" for writing!\n", destination);
+                    return;
+                }
+                stdout.printf("* Extracting DZ file: \"%s\"\n", (string)dzChunk.FileName);
+                buf = new uint8[dzChunk.DataSize];
+                this.File.seek(offset, Posix.FILE.SEEK_SET);
+                this.File.read(buf, dzChunk.DataSize, 1);
+                f.write(buf, (size_t)dzChunk.DataSize, 1);
+                // Forward to next data blob
+                offset += (long)(dzChunk.DataSize + sizeof(DzChunk));
+            }
         }
 
         public string to_string()

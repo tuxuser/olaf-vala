@@ -41,6 +41,7 @@ namespace Olaf
 			stdout.printf("\tpull [remote file path] [local file path]\n");
 			stdout.printf("\tdump [partition name] [local destination file]\n");
 			stdout.printf("\tflash [partition name] [local source file]\n");
+			stdout.printf("\tkdzextract [kdz file] [destination path]\n");
 			stdout.printf("\tshell - Execute an interactive shell session\n");
 			stdout.printf("\tinfo - Show phone / LAF info\n");
 			stdout.printf("\tgpt - Show GPT partition table of LAF device\n");
@@ -246,16 +247,16 @@ namespace Olaf
 			stdout.printf("Writing partition finished!\n");
 		}
 
-		public static void ShowKdzInfo(string path)
+		public static void ShowKdzInfo(string filePath)
 		{
-			Posix.FILE? f = Posix.FILE.open(path, "rb");
-			if (f == null)
-			{
-				stderr.printf("Failed to open file \"%s\"\n", path);
-				return;
-			}
-			Kdz info = new Kdz(f);
+			Kdz info = new Kdz(filePath);
 			stdout.printf(info.to_string());
+		}
+
+		public static void ExtractKdz(string filePath, string destinationPath)
+		{
+			Kdz kdz = new Kdz(filePath);
+			kdz.Extract(destinationPath);
 		}
 
 		public static int main(string[] args)
@@ -336,6 +337,14 @@ namespace Olaf
 						break;
 					}
 					WritePartition(protocol, args[2], args[3]);
+					break;
+				case "kdzextract":
+					if (args.length < 4)
+					{
+						stderr.printf("kdzextract: Missing kdz file and/or destination path\n");
+						ShowUsage();
+					}
+					ExtractKdz(args[2], args[3]);
 					break;
 				case "shell":
 					RunCmdShell(protocol);
